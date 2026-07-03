@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  employeeId    String   @unique
+  firstName     String
+  lastName      String
+  email         String   @unique
+  department    String
+  role          String
+  designation   String
+  managerId     String?
+  hireDate      DateTime
+  salary        Int
+  ssn           String
+  bankAccount   String
+  isAdmin       Boolean  @default(false)
+  isFinance     Boolean  @default(false)
+  isHr          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  leaveBalance  LeaveBalance?
+  leaves        Leave[]
+  compOffs      CompOff[]
+  encashments   Encashment[]
+  attendances   Attendance[]
+  uploads       UploadedFile[]
+
+  @@map("employees")
+}
+
+model LeaveBalance {
+  id              String   @id @default(cuid())
+  employeeId      String   @unique
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  annualLeaves    Int      @default(24)
+  sickLeaves      Int      @default(12)
+  casualLeaves    Int      @default(8)
+  compOffBalance  Int      @default(0)
+  encashedDays    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("leave_balances")
+}
+
+model Leave {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type        String   // ANNUAL, SICK, CASUAL, COMP_OFF
+  startDate   DateTime
+  endDate     DateTime
+  days        Int
+  reason      String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leaves")
+}
+
+model CompOff {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime
+  reason      String
+  status      String   @default("PENDING")
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("comp_offs")
+}
+
+model Encashment {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  days        Int
+  amount      Int
+  status      String   @default("PENDING")
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("encashments")
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime
+  checkIn     DateTime?
+  checkOut    DateTime?
+  status      String   // PRESENT, ABSENT, WFH, HALF_DAY
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("attendances")
+}
+
+model UploadedFile {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  filename    String
+  contentType String
+  data        String   // base64 stored inline for simplicity
+  purpose     String   // ATTENDANCE_PROOF, POLICY, OTHER
+  createdAt   DateTime @default(now())
+
+  @@map("uploaded_files")
+}
+
+model Policy {
+  id          String   @id @default(cuid())
+  title       String
+  category    String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("policies")
+}
